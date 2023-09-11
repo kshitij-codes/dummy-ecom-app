@@ -1,7 +1,8 @@
 import { Rating } from "@mui/material";
 import { Carousel } from "flowbite-react";
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import useCartStore from "../zustand/cartStore";
 
 type Product = {
   id: number;
@@ -16,10 +17,42 @@ type Product = {
   images: string[];
 };
 
+type CartItems = {
+  product: Product;
+  quantity: number;
+}[];
+
 export const Product = () => {
   const { id } = useParams();
 
   const [product, setProduct] = useState<Product>();
+  const setCartItems = useCartStore((state) => state.setCartItems);
+  const cartItems = useCartStore((state) => state.cartItems);
+
+  const addToCart = () => {
+    const existingItem = cartItems.find(
+      (item) => item.product.id === Number(id)
+    );
+
+    if (existingItem) {
+      const updatedCartItems = cartItems.map((item) =>
+        item.product.id === existingItem.product.id
+          ? { ...item, quantity: item.quantity + 1 }
+          : item
+      );
+      setCartItems(updatedCartItems);
+    } else {
+      if (product) {
+        const updatedCartItems: CartItems = [
+          ...cartItems,
+          { product: product, quantity: 1 },
+        ];
+        setCartItems(updatedCartItems);
+      } else {
+        console.error("Product is undefined");
+      }
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -57,10 +90,19 @@ export const Product = () => {
             precision={0.5}
             readOnly
           />
-
-          <button className="block bg-blue-700 mt-3 rounded-lg px-4 py-2 text-sm text-white  mb-8">
-            Add to Cart
-          </button>
+          <div className="flex gap-4">
+            <button
+              onClick={addToCart}
+              className="block bg-green-700 mt-3 rounded-lg px-4 py-2 text-sm text-white  mb-8"
+            >
+              Add to Cart
+            </button>
+            <Link to={`/admin/product/edit/${id}`}>
+              <button className="block bg-blue-700 mt-3 rounded-lg px-4 py-2 text-sm text-white  mb-8">
+                Edit Product
+              </button>
+            </Link>
+          </div>
           <p className="text-sm text-gray-500">{product?.description}</p>
         </div>
       </div>
